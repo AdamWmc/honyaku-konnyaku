@@ -1,22 +1,22 @@
 ---
-description: "Translate English SRT to Traditional Chinese via sub-agent to keep main context clean"
+description: "Translate source-language SRT to Traditional Chinese via sub-agent to keep main context clean"
 ---
 
-# /translate — 英文字幕翻譯成繁體中文
+# /translate — 字幕翻譯成繁體中文
 
 **架構：spawn sub-agent 執行翻譯，主 session context 保持乾淨。**
 
 ## 用法
 
 ```
-/translate <video_id>
+/translate <video_title>
 ```
 
 ## 主 session 職責
 
-1. 確認 `videos/<name>.en.srt` 存在，否則提示先執行 `/transcribe`
+1. 偵測來源字幕檔：掃描 `videos/<name>.*.srt`，找出非 `zh-tw` 的 SRT（即原始語言字幕，如 `.en.srt`、`.ja.srt`）；若找不到則提示先執行 `/transcribe`
 2. 若 `videos/<name>.zh-tw.srt` 已存在 → skip，告知用戶並結束（如需重新翻譯請先刪除該檔案）
-3. 將下方 Sub-agent Prompt 中所有的 `<name>` 替換為實際影片標題 base name，再傳入
+3. 將下方 Sub-agent Prompt 中的 `<name>` 替換為實際標題、`<src_lang>` 替換為偵測到的來源語言代碼，再傳入
 4. Spawn sub-agent（Agent tool，subagent_type: general-purpose）並傳入替換後的完整 prompt
 5. 等待完成後確認：`videos/<name>.zh-tw.srt` 存在、段數與原檔一致
 6. 回報給用戶
@@ -26,7 +26,8 @@ description: "Translate English SRT to Traditional Chinese via sub-agent to keep
 ## Sub-agent Prompt（完整版，逐字傳入）
 
 ```
-任務：將 videos/<name>.en.srt 翻譯成繁體中文，輸出到 videos/<name>.zh-tw.srt。
+任務：將 videos/<name>.<src_lang>.srt 翻譯成繁體中文，輸出到 videos/<name>.zh-tw.srt。
+來源語言：<src_lang>（如 en = 英文、ja = 日文、ko = 韓文）
 
 ## SRT 格式規範
 
@@ -76,11 +77,11 @@ SRT 每個字幕段由三部分組成，段與段之間必須有一個空行：
 
 ## 執行步驟
 
-1. 用 Read tool 讀取 videos/<name>.en.srt
+1. 用 Read tool 讀取 videos/<name>.<src_lang>.srt
 2. 逐段翻譯（在自己的 context 中處理，不需要分批呼叫外部 API）
 3. 用 Write tool 將完整結果寫入 videos/<name>.zh-tw.srt
 4. 驗證：用 Grep 確認輸出段數 = 輸入段數
 5. 回報：總段數、處理時間、有無無法翻譯的段落
 
-完成條件：videos/<name>.zh-tw.srt 存在，且段數與 .en.srt 完全一致。
+完成條件：videos/<name>.zh-tw.srt 存在，且段數與 .<src_lang>.srt 完全一致。
 ```
