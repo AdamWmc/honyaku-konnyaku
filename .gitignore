@@ -1,0 +1,21 @@
+# Media files (large, not tracked)
+videos/*.mp4
+videos/*.webm
+videos/*.mkv
+audio/*.wav
+audio/*.mp3
+
+# Keep subtitle files
+!videos/*.srt
+!videos/*.vtt
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Claude local settings (machine-specific)
+.claude/settings.local.json
